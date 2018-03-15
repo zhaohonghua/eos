@@ -9,10 +9,15 @@
 #include <eosiolib/serialize.hpp>
 #include <eosiolib/system.h>
 #include <eosiolib/privileged.h>
+#include <eosiolib/generic_currency.hpp>
 
 using namespace eosio;
 
 namespace testsystem {
+
+   typedef eosio::generic_currency< eosio::token<N(eosio),S(4,EOS)> > currency;
+   typedef typename currency::token_type system_token_type;
+
    template<uint64_t Val>
    struct dispatchable {
       constexpr static uint64_t action_name = Val;
@@ -94,7 +99,12 @@ extern "C" {
 /// The apply method implements the dispatch of events to this contract
 void apply( uint64_t code, uint64_t act ) {
    if (code == current_receiver()) {
-      testsystem::dispatcher::dispatch(act);
+      if(!testsystem::dispatcher::dispatch(act)) {
+         if ( !eosio::dispatch<testsystem::currency, typename testsystem::currency::transfer, typename testsystem::currency::issue>( code, act ) ) {
+            eosio::print("Unexpected action: ", eosio::name(act), "\n");
+            eosio_assert( false, "received unexpected action");
+         }
+      }
    }
 }
 
