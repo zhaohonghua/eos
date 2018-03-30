@@ -6,11 +6,6 @@ add_library( db_plugin
 find_package(libmongoc-1.0 1.8)
 
 if (libmongoc-1.0_FOUND)
-
-    # EOS has no direct dependencies on libmongoc but its shared libraries
-    # will need to be present at runtime for the C++ libraries we use:
-    # libbsoncxx & libmongocxx (both from github.com/mongodb/mongo-cxx-driver)
-
     # The *.cmake package files provided by mongo-cxx-driver don't give us the
     # absolute path to the libraries, which is needed whenever they are not
     # installed in system-known locations.  CMake requires the absolute paths
@@ -20,14 +15,28 @@ if (libmongoc-1.0_FOUND)
 
     find_package(libbsoncxx REQUIRED)
     message(STATUS "Found bsoncxx headers: ${LIBBSONCXX_INCLUDE_DIRS}")
-    find_library(EOS_LIBBSONCXX ${LIBBSONCXX_LIBRARIES}
-                 PATHS ${LIBBSONCXX_LIBRARY_DIRS} NO_DEFAULT_PATH)
+
+    # mongo-cxx-driver 3.2 release altered LIBBSONCXX_LIBRARIES semantics. Instead of library names,
+    #  it now hold library paths.
+    if((LIBBSONCXX_VERSION_MAJOR LESS 3) OR ((LIBBSONCXX_VERSION_MAJOR EQUAL 3) AND (LIBBSONCXX_VERSION_MINOR LESS 2)))
+        find_library(EOS_LIBBSONCXX ${LIBBSONCXX_LIBRARIES}
+                PATHS ${LIBBSONCXX_LIBRARY_DIRS} NO_DEFAULT_PATH)
+    else()
+        set(EOS_LIBBSONCXX ${LIBBSONCXX_LIBRARIES})
+    endif()
     message(STATUS "Found bsoncxx library: ${EOS_LIBBSONCXX}")
 
     find_package(libmongocxx REQUIRED)
     message(STATUS "Found mongocxx headers: ${LIBMONGOCXX_INCLUDE_DIRS}")
-    find_library(EOS_LIBMONGOCXX ${LIBMONGOCXX_LIBRARIES}
-                 PATHS ${LIBMONGOCXX_LIBRARY_DIRS} NO_DEFAULT_PATH)
+
+    # mongo-cxx-driver 3.2 release altered LIBBSONCXX_LIBRARIES semantics. Instead of library names,
+    #  it now hold library paths.
+    if((LIBMONGOCXX_VERSION_MAJOR LESS 3) OR ((LIBMONGOCXX_VERSION_MAJOR EQUAL 3) AND (LIBMONGOCXX_VERSION_MINOR LESS 2)))
+        find_library(EOS_LIBMONGOCXX ${LIBMONGOCXX_LIBRARIES}
+                PATHS ${LIBMONGOCXX_LIBRARY_DIRS} NO_DEFAULT_PATH)
+    else()
+        set(EOS_LIBMONGOCXX ${LIBMONGOCXX_LIBRARIES})
+    endif()
     message(STATUS "Found mongocxx library: ${EOS_LIBMONGOCXX}")
 
     add_definitions(-DMONGODB)
